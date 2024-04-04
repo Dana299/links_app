@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+{% set active_page = 'main_page' %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h1>Веб-ресурсы: {{ data.meta.total_items }}</h1>
+        <hr>
+        <div class="row">
+            <div class="col-md-3" id="filter-container">
+                <div class="card bg-transparent shadow p-3 mb-5 bg-white rounded">
+                    <div class="card-body">
+                        <form action="{{ url_for('index') }}" method="GET">
+                            <div class="mb-3">
+                                <label for="domain_zone" class="form-label">Доменная зона:</label>
+                                <input type="text" name="domain_zone" id="domain_zone" value="{{ request.args.get('domain_zone', '') }}" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id" class="form-label">ID ресурса:</label>
+                                <input type="number" name="id" id="id" value="{{ request.args.get('id', '') }}" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="uuid" class="form-label">UUID:</label>
+                                <input type="text" name="uuid" id="uuid" value="{{ request.args.get('uuid', '') }}" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="availability" class="form-label">Доступность:</label>
+                                <select name="availability" id="availability" class="form-select">
+                                    <option value="">Все</option>
+                                    <option value="true" {% if request.args.get('availability') == 'true' %}selected{% endif %}>Да</option>
+                                    <option value="false" {% if request.args.get('availability') == 'false' %}selected{% endif %}>Нет</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="per_page" class="form-label">Ресурсов на странице:</label>
+                                <input type="number" name="per_page" id="per_page" value="{{ request.args.get('per_page', 10) }}" class="form-control">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary shadow">Применить фильтры</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        <div class="col-md-9">
+            {% for resource in data["items"] %}
+                {% if resource.is_available == true %}
+                    <div class="card alert-success bg-gradient text-dark shadow p-3 mb-3">
+                {% elif resource.is_available == false %}
+                    <div class="card alert-danger bg-gradient text-dark shadow p-3 mb-3">
+                {% else %}
+                    <div class="card alert-secondary bg-gradient text-dark shadow p-3 mb-3">
+                {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="/resources/{{ resource.uuid }}" class="text-decoration-none">{{ resource.full_url }}</a>
+                        </h5>
+                        <p class="card-text">Домен: {{ resource.domain }}</p>
+                        <p class="card-text">Доменная зона: {{ resource.domain_zone }}</p>
+                        <p class="card-text">Последний код ответа: {{ resource.status_code if resource.status_code is not none else 'нет данных' }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+
+            <nav aria-label="...">
+                <ul class="pagination pagination-circle justify-content-center d-flex">
+                    {% if data.links.prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ data.links.prev }}">Предыдущая страница</a>
+                        </li>
+                    {% endif %}
+
+                    <div id="pagination-numbers" class="d-flex">
+                        {% for page in range(1, data.meta.total_pages + 1) %}
+                            <li class="page-item {% if page == data.meta.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('index', page=page, per_page=data.meta.per_page, domain_zone=request.args.get('domain_zone', ''), id=request.args.get('id', ''), uuid=request.args.get('uuid', ''), availability=request.args.get('availability', '')) }}">{{ page }}</a>
+                            </li>
+                        {% endfor %}
+                    </div>
+
+                    {% if data.links.next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ data.links.next }}">Следующая страница</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+{% endblock %}

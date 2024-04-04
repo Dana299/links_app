@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-4">
+
+        <h1>
+            Информация об обработке файла
+        </h1>
+        <hr>
+
+        <div id="resource-container">
+            <div class="col-md-6 mb-6">
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+
+                            <li class="list-group-item">Статус обработки: {% if resource_data.status == "in_process" %}в обработке{% elif resource_data.status == "pending" %}в очереди на обработку{% elif resource_data.status == "succeeded" %}завершена{% endif %}</li>
+
+                            <li class="list-group-item">Строк в файле: {{ resource_data.total }}</li>
+
+                            <li class="list-group-item">Обработано строк в файле: {{ resource_data.processed }}</li>
+
+                            <li class="list-group-item">Число строк с невалидными ссылками: {{ resource_data.errors.count }}</li>
+
+                            {% if resource_data.errors.count and resource_data.errors.count > 0 %}
+                                <li class="list-group-item">
+                                    {% for errorUrl in resource_data.errors.error_urls %}
+                                        {{ errorUrl }}<br>
+                                    {% endfor %}
+                                </li>
+                            {% endif %}
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
