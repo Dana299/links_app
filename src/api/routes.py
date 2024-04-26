@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 from flask import Response, jsonify, request, url_for
 from pydantic import ValidationError
 
@@ -36,21 +38,16 @@ def create_url():
     """
     if request.is_json:
         body = request.get_json()
-
         try:
             url = handlers.handle_post_url_json(body)
-
             app.logger.info(f"201 - User posted new URL on {url_for('.create_url')}")
-
             return Response(
                 url.json(),
                 status=201,
                 mimetype='application/json',
             )
-
         except exceptions.AlreadyExistsError:
             return jsonify({'error': 'Web resource already exists'}), 409
-
         except ValidationError as e:
             app.logger.info(f"400 - User made bad request to {request.url}")
             errors = convert_to_serializable(e.errors())
@@ -61,16 +58,12 @@ def create_url():
             return jsonify(response), 400
 
     elif request.files:
-
         try:
-            processing_request_id = handlers.handle_post_url_file(request.files)
-
+            processing_request = handlers.handle_post_url_file(request.files)
             app.logger.info(
                 f"201 - User posted ZIP archive with URLs on {url_for('.create_url')}"
             )
-
-            return jsonify({"request_id": processing_request_id}), 201
-
+            return jsonify(asdict(processing_request)), 201
         except ValidationError as e:
             errors = convert_to_serializable(e.errors())
             response = {
@@ -94,7 +87,6 @@ def delete_url_structure(web_resource_id: int):
         db.delete_web_resource_by_id(web_resource_id)
         app.logger.info(f"204 - Resource with ID={web_resource_id} was deleted.")
         return Response(status=204)
-
     except exceptions.ResourceNotFoundError:
         app.logger.info(f"404 - Attempt to delete resource with ID={web_resource_id} that does not exist.")
         return Response(status=404)
@@ -124,13 +116,10 @@ def post_image_for_resource(resource_uuid: str):
             handlers.handle_add_image_for_web_resource(
                 files=request.files,
                 resource_uuid=resource_uuid,
-
             )
             return Response(status=201)
-
         except exceptions.ResourceNotFoundError:
             return jsonify({"Error": "Web resource with the givent UUID not found."}), 404
-
         except ValidationError as e:
             # app.logger.info(f""")
             errors = convert_to_serializable(e.errors())

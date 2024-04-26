@@ -66,8 +66,7 @@ class ResourceAddRequestSchema(BaseModel):
     full_url: AnyHttpUrl
 
 
-class ResourceBaseSchema(ResourceAddRequestSchema):
-    uuid: UUID4
+class ResourceNoUUIDSchema(ResourceAddRequestSchema):
     protocol: str
     domain: str
     domain_zone: str
@@ -81,6 +80,9 @@ class ResourceBaseSchema(ResourceAddRequestSchema):
         if screenshot is not None and isinstance(screenshot, bytes):
             values["screenshot"] = b64encode(screenshot).decode("utf-8")
         return values
+
+class ResourceBaseSchema(ResourceNoUUIDSchema):
+    uuid: UUID4
 
 
 class ResourceShortSchema(ResourceAddRequestSchema):

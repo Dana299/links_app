@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask_socketio import SocketIO
 
+
 socketio = SocketIO()
 celery_socketio = SocketIO()
 

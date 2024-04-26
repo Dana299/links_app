@@ -4,8 +4,7 @@ from src.db import models
 from src.db.converters import (convert_web_resource_db_model_to_dto,
                                convert_web_resource_dto_to_db_model)
 from src.repositories.base import SqlAlchemyRepository
-from src.schemes.web_resources import (ResourceAddRequestSchema,
-                                       ResourceBaseSchema)
+from src.schemes.web_resources import ResourceBaseSchema
 from src.service.exceptions import ResourceNotFoundError
 
 

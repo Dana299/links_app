@@ -7,6 +7,7 @@ from werkzeug.datastructures.structures import ImmutableMultiDict
 
 from src import app
 from src.db import models
+from src.repositories.processing_requests import ProcessingRequestRepository
 from src.repositories.web_resources import WebResourceRepository
 from src.schemes.web_resources import (FileRequestSchema,
                                        PaginatedListResourceSchema,
@@ -24,7 +25,10 @@ from src.web.app import db
 
 
 def handle_post_url_json(body) -> ResourceAddResponseSchema:
-    resource_service = WebResourceService(WebResourceRepository(db.session))
+    resource_service = WebResourceService(
+        WebResourceRepository(db.session),
+        ProcessingRequestRepository(db.session),
+    )
     try:
         resource_add_schema = ResourceAddRequestSchema(**body)
 
@@ -32,7 +36,7 @@ def handle_post_url_json(body) -> ResourceAddResponseSchema:
         raise e
 
     try:
-        resource = resource_service.create_resource(resource_add_schema.full_url)
+        resource = resource_service.create_resource_from_url(resource_add_schema.full_url)
         return resource
 
     except exceptions.AlreadyExistsError as e:
@@ -40,34 +44,16 @@ def handle_post_url_json(body) -> ResourceAddResponseSchema:
 
 
 def handle_post_url_file(files) -> int:
+    resource_service = WebResourceService(
+        WebResourceRepository(db.session),
+        ProcessingRequestRepository(db.session),
+    )
     try:
         validated_data = ZipFileRequestSchema(**files)
+        return resource_service.create_resources_from_file(validated_data)
 
     except ValidationError as e:
         raise e
-
-    if not ziploader.allowed_file(validated_data.file.filename):
-        raise exceptions.InvalidFileFormatError("File format is not in allowed extensions.")
-
-    else:
-        filename = ziploader.make_uuid_filename(validated_data.file.filename)
-        validated_data.file.save(
-            os.path.join(
-                app.config["UPLOAD_FOLDER"],
-                filename,
-            )
-        )
-
-    # create ZipFileProcessingRequest model instance
-    processing_request_id = db.create_file_processing_request()
-
-    # create celery task and pass id of created request to it as argument
-    process_zip_archive.delay(
-        zip_file=filename,
-        request_id=processing_request_id,
-    )
-
-    return processing_request_id
 
 
 def handle_add_image_for_web_resource(files: ImmutableMultiDict, resource_uuid: str) -> None:

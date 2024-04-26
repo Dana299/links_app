@@ -6,6 +6,10 @@ class ResourceNotFoundError(Exception):
     pass
 
 
+class ProcessingRequestNotFound(Exception):
+    pass
+
+
 class InvalidFileFormatError(Exception):
     pass
 
