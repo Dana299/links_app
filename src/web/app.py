@@ -1,7 +1,10 @@
 import logging
 import os
+import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+sys.path.append(str(Path(__file__).parents[2].resolve()))
 
 import yaml
 from celery import Celery, Task
@@ -12,13 +15,13 @@ from flask_sqlalchemy import SQLAlchemy
 from redis import Redis
 from werkzeug.routing import IntegerConverter, UUIDConverter
 
-from src import log_buffer, socketio, celery_socketio
+from src import celery_socketio, log_buffer, socketio
 from src.web.logger import LogBufferHandler, WebSocketHandler
 
 db = SQLAlchemy()
 
-BASE_PATH = Path(__file__).resolve().parent.parent
-load_dotenv(os.path.join(BASE_PATH, ".env"))
+BASE_PATH = Path(__file__).resolve().parents[2]
+load_dotenv(os.path.join(BASE_PATH, ".env"), verbose=True, override=True)
 
 
 def create_app(conf_file: str = "config.yaml"):
