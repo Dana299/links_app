@@ -1,5 +1,3 @@
-from typing import Optional
-
 from src.db import models
 from src.db.converters import convert_processing_request_db_model_to_dto
 from src.repositories.base import SqlAlchemyRepository
@@ -25,14 +23,3 @@ class ProcessingRequestRepository(SqlAlchemyRepository):
 
     def delete_by_id(self):
         pass
-
-
-class NewsFeedRepository(SqlAlchemyRepository):
-    def add_one(self, resource_id: int, event: models.EventType):
-        """Create new NewsFeedItem for resource with the given id."""
-        news_item = models.NewsFeedItem(
-            event_type=event,
-            resource_id=resource_id
-        )
-        self.session.add(news_item)
-        self.session.commit()
