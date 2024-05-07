@@ -4,8 +4,12 @@ from flask import Response, jsonify, request, url_for
 from pydantic import ValidationError
 
 from src import app, bp, celery_socketio, log_buffer, socketio
-from src.service import db, exceptions, handlers
+from src.repositories.processing_requests import ProcessingRequestRepository
+from src.repositories.web_resources import WebResourceRepository
+from src.service import exceptions, handlers
+from src.service.web_resources import WebResourceService
 from src.utils.helpers import convert_to_serializable, make_int
+from src.web.app import db
 
 
 @bp.route('/resources', methods=['GET'])
@@ -82,9 +86,13 @@ def create_url():
 
 
 @bp.route("/resources/<int:web_resource_id>", methods=['DELETE'])
-def delete_url_structure(web_resource_id: int):
+def delete_web_resource(web_resource_id: int):
+    web_resource_service = WebResourceService(
+        WebResourceRepository(db.session),
+        ProcessingRequestRepository(db.session),
+    )
     try:
-        db.delete_web_resource_by_id(web_resource_id)
+        web_resource_service.delete_resource(web_resource_id)
         app.logger.info(f"204 - Resource with ID={web_resource_id} was deleted.")
         return Response(status=204)
     except exceptions.ResourceNotFoundError:
@@ -133,22 +141,22 @@ def post_image_for_resource(resource_uuid: str):
         return jsonify({"Error": "Invalid request format"}), 400
 
 
-@bp.route("/resources/<uuid:resource_uuid>", methods=["GET"])
-def get_resource_page(resource_uuid):
-    try:
-        web_resource_data = handlers.handle_get_resource_data(resource_uuid)
-    except exceptions.NotFoundError:
-        return jsonify({"Error": "Resource with the given UUID not found."})
+# @bp.route("/resources/<uuid:resource_uuid>", methods=["GET"])
+# def get_resource_page(resource_uuid):
+#     try:
+#         web_resource_data = handlers.handle_get_resource_data(resource_uuid)
+#     except exceptions.NotFoundError:
+#         return jsonify({"Error": "Resource with the given UUID not found."})
 
-    return jsonify(web_resource_data.dict())
+#     return jsonify(web_resource_data.dict())
 
 
-@bp.route("/logs", methods=["GET"])
-def get_logs():
-    log_response = schemes.LogListGetSchema(
-        logs=[schemes.LogRecordSchema(**log) for log in log_buffer]
-    )
-    return jsonify(log_response.dict())
+# @bp.route("/logs", methods=["GET"])
+# def get_logs():
+#     log_response = schemes.LogListGetSchema(
+#         logs=[schemes.LogRecordSchema(**log) for log in log_buffer]
+#     )
+#     return jsonify(log_response.dict())
 
 
 @socketio.on("connect", namespace="/logs")

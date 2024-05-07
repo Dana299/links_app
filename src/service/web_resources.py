@@ -6,6 +6,7 @@ from src.repositories.web_resources import WebResourceRepository
 from src.schemes.processing_requests import ProcessingRequestSchema
 from src.schemes.web_resources import ResourceBaseSchema, ZipFileRequestSchema
 from src.service import exceptions
+from src.service.exceptions import ResourceNotFoundError
 from src.tasks import process_zip_archive
 from src.utils import ziploader
 from src.utils.urlparser import parse_url
@@ -52,3 +53,10 @@ class WebResourceService:
             request_id=processing_request.id
         )
         return processing_request
+
+    def delete_resource(self, resource_id: str):
+        """Delete resource and create event."""
+        try:
+            self.resource_repo.delete_by_id(resource_id)
+        except ResourceNotFoundError as e:
+            raise e
